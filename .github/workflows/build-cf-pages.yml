@@ -1,0 +1,40 @@
+name: Build Static for CF Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # 允许你手动点击运行
+
+jobs:
+  build-frontend:
+    name: Build Frontend Static Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # 注意：这里运行的是你前端项目的打包命令（通常是 npm run build 或 npx next build）
+      # 它不会去编译 Rust 后端，只会生成纯前端的静态 HTML/JS/CSS
+      - name: Build Web Static
+        run: npm run build
+
+      # 将打包出来的静态文件夹（根据你的前端框架，可能是 out、dist 或 build，Next.js 通常是 out）
+      # 打包成 Artifact 供你下载
+      - name: Upload Static Folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf-pages-static-files
+          path: out/ # 如果你的项目打包后生成的文件夹是 dist，请改成 dist/
+          if-no-files-found: error
